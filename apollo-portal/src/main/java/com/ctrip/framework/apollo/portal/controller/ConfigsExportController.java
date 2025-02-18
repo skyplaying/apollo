@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Apollo Authors
+ * Copyright 2024 Apollo Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.ctrip.framework.apollo.portal.service.ConfigsExportService;
 import com.ctrip.framework.apollo.portal.service.NamespaceService;
 import com.ctrip.framework.apollo.portal.util.NamespaceBOUtils;
 
-import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -78,7 +78,7 @@ public class ConfigsExportController {
    *   application.json
    * </pre>
    */
-  @PreAuthorize(value = "!@permissionValidator.shouldHideConfigToCurrentUser(#appId, #env, #namespaceName)")
+  @PreAuthorize(value = "!@userPermissionValidator.shouldHideConfigToCurrentUser(#appId, #env, #clusterName, #namespaceName)")
   @GetMapping("/apps/{appId}/envs/{env}/clusters/{clusterName}/namespaces/{namespaceName}/items/export")
   public void exportItems(@PathVariable String appId, @PathVariable String env,
                                   @PathVariable String clusterName, @PathVariable String namespaceName,
@@ -93,7 +93,7 @@ public class ConfigsExportController {
     }
 
     NamespaceBO namespaceBO = namespaceService.loadNamespaceBO(appId, Env.valueOf
-        (env), clusterName, namespaceName);
+        (env), clusterName, namespaceName, true, false);
 
     //generate a file.
     res.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + fileName);
@@ -111,6 +111,7 @@ public class ConfigsExportController {
    * Export all configs in a compressed file. Just export namespace which current exists read permission. The permission
    * check in service.
    */
+  @PreAuthorize(value = "@userPermissionValidator.isSuperAdmin()")
   @GetMapping("/configs/export")
   public void exportAll(@RequestParam(value = "envs") String envs,
                         HttpServletRequest request, HttpServletResponse response) throws IOException {
